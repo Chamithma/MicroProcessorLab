@@ -34,7 +34,8 @@ use IEEE.STD_LOGIC_1164.ALL;
 entity Program_Counter is
     Port ( Res : in STD_LOGIC;
            Clk : in STD_LOGIC;
-           Q : out std_logic_vector( 2 downto 0));
+           D_IN : in STD_LOGIC_VECTOR( 2 downto 0);
+           Q : out std_logic_vector( 2 downto 0):= "000");
 end Program_Counter;
 
 architecture Behavioral of Program_Counter is
@@ -47,54 +48,66 @@ architecture Behavioral of Program_Counter is
     END COMPONENT;
     
         
-    COMPONENT Slow_Clk
-        PORT( Clk_in : IN STD_LOGIC;
-              Clk_out : OUT STD_LOGIC);
-    END COMPONENT;
+
     
     SIGNAL Q0, Q1, Q2 : STD_LOGIC;
     SIGNAL D0, D1, D2 : STD_LOGIC;
     SIGNAL Clk_slow : STD_LOGIC;  -- INTERNAL CLOCK
+    SIGNAL D  : STD_LOGIC_VECTOR (2 downto 0) := "000";
 
 begin
- Slow_Clk0 : Slow_Clk
-        PORT MAP( Clk_in => Clk,
-                  Clk_out => Clk_slow 
-        );
 
- D_FF0 : D_FF
-        PORT MAP(
-            D => D0,
-            Res => Res,
-            Clk => Clk_slow,
-            Q => Q0
-        );
-    D_FF1 : D_FF
-        PORT MAP(
-            D => D1,
-            Res => Res,
-            Clk => Clk_slow,
-            Q => Q1
-        );
-    D_FF2 : D_FF
-        PORT MAP(
-            D => D2,
-            Res => Res,
-            Clk => Clk_slow,
-            Q => Q2
-        );
+--begin
+process (Clk) begin 
+    if(rising_edge(Clk)) then
+        if (Res='1') then 
+            Q<="000";
+         else 
+         
+
+        Q<=D_IN;
+        end if;
+        
+    end if ;
+end process;
+-- D_FF0 : D_FF
+--        PORT MAP(
+--            D => D(0),
+--            Res => Res,
+--            Clk => Clk,
+--            Q => Q(0)
+--        );
+--    D_FF1 : D_FF
+--        PORT MAP(
+--            D => D(1),
+--            Res => Res,
+--            Clk => CLk,
+--            Q => Q(1)
+--        );
+--    D_FF2 : D_FF
+--        PORT MAP(
+--            D => D(2),
+--            Res => Res,
+--            Clk => Clk,
+--            Q => Q(2)
+--        );
 
  
     
-    D2 <= (Q2 and not(Q1)) OR (not(Q2) AND Q1 AND Q0) OR (Q2 AND Q1 AND not(Q0));
-    D1 <=  (not(Q1) AND Q0) OR  (Q1 AND not(Q0));
-    D0 <= (not( Q1) AND not(Q0)) OR (Q1 AND not(Q0));
+--    D2 <= (Q2 and not(Q1)) OR (not(Q2) AND Q1 AND Q0) OR (Q2 AND Q1 AND not(Q0));
+--    D1 <=  (not(Q1) AND Q0) OR  (Q1 AND not(Q0));
+--    D0 <= (not( Q1) AND not(Q0)) OR (Q1 AND not(Q0));
  
+--process (Clk)
 
+--begin
+--if(rising_edge(Clk)) then
+--   D <=D_IN;
+         
+    
+--end if;
 
-Q(0)<=Q0;
-Q(1)<=Q1;
-Q(2)<=Q2;
+--end process;
 
 
 
