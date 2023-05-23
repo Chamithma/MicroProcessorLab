@@ -1,0 +1,231 @@
+----------------------------------------------------------------------------------
+-- Company: 
+-- Engineer: 
+-- 
+-- Create Date: 05/18/2023 09:21:17 PM
+-- Design Name: 
+-- Module Name: MicroProcessor - Behavioral
+-- Project Name: 
+-- Target Devices: 
+-- Tool Versions: 
+-- Description: 
+-- 
+-- Dependencies: 
+-- 
+-- Revision:
+-- Revision 0.01 - File Created
+-- Additional Comments:
+-- 
+----------------------------------------------------------------------------------
+
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+-- Uncomment the following library declaration if using
+-- arithmetic functions with Signed or Unsigned values
+--use IEEE.NUMERIC_STD.ALL;
+
+-- Uncomment the following library declaration if instantiating
+-- any Xilinx leaf cells in this code.
+--library UNISIM;
+--use UNISIM.VComponents.all;
+
+entity MicroProcessor is
+    Port ( Clk : in STD_LOGIC;
+           Reset : in STD_LOGIC);
+end MicroProcessor;
+
+architecture Behavioral of MicroProcessor is
+
+
+COMPONENT Slow_Clk
+        PORT( Clk_in : IN STD_LOGIC;
+              Clk_out : OUT STD_LOGIC);
+    END COMPONENT; 
+component Program_Counter port ( 
+            Res : in STD_LOGIC;
+           Clk : in STD_LOGIC;
+           D_IN : in STD_LOGIC_VECTOR( 2 downto 0);
+           Q : out std_logic_vector( 2 downto 0));
+end component;
+
+component Adder_03_bit Port ( A : in STD_LOGIC_VECTOR (2 downto 0);
+           B : in STD_LOGIC_VECTOR (2 downto 0);
+           S : out STD_LOGIC_VECTOR (2 downto 0);
+           Cin : in STD_LOGIC;
+           Cout : out STD_LOGIC); 
+ end component;
+ 
+ component Adder_4_bit Port (
+  A : in STD_LOGIC_VECTOR (3 downto 0);
+           B : in STD_LOGIC_VECTOR (3 downto 0);
+           Cin : in STD_LOGIC;
+           M : in STD_LOGIC;
+           S : out STD_LOGIC_VECTOR (3 downto 0);
+           Cout : out STD_LOGIC;
+           Zero : out STD_LOGIC); 
+ end component;
+ component Instruction_Decoder port ( instruction : in STD_LOGIC_VECTOR (11 downto 0);
+           load_select : out STD_LOGIC;
+           add_or_subtract : out STD_LOGIC ;
+           intermidiate_value : out STD_LOGIC_VECTOR(3 downto 0);
+           register_select_MUX_1 : out STD_LOGIC_VECTOR (2 downto 0);
+           register_enable : out STD_LOGIC_VECTOR (2 downto 0);
+           register_select_mux_2 : out STD_LOGIC_VECTOR (2 downto 0);
+           disable_all_register : out STD_LOGIC ;
+           address_to_jump : out STD_LOGIC_VECTOR (2 downto 0)  ;
+           jump_flag : out STD_LOGIC;
+           register_check_for_jump : in STD_LOGIC_VECTOR (3 downto 0));
+end component;
+
+component MUX_2_to_1_3_bit   Port ( D0 : in STD_LOGIC_VECTOR (2 downto 0);
+           D1 : in STD_LOGIC_VECTOR (2 downto 0);
+           Y : out STD_LOGIC_VECTOR (2 downto 0);
+           S : in STD_LOGIC);
+end component ;
+
+component MUX_2_to_1_04_bit   Port ( D0 : in STD_LOGIC_VECTOR (3 downto 0);
+           D1 : in STD_LOGIC_VECTOR (3 downto 0);
+           Y : out STD_LOGIC_VECTOR (3 downto 0);
+           load_select : in STD_LOGIC);
+end component ;
+component Mux_8_to_1_4_bit 
+ Port ( D0 : in STD_LOGIC_VECTOR (3 downto 0);
+           D1 : in STD_LOGIC_VECTOR (3 downto 0);
+           D2 : in STD_LOGIC_VECTOR (3 downto 0);
+           D3 : in STD_LOGIC_VECTOR (3 downto 0);
+           D4 : in STD_LOGIC_VECTOR (3 downto 0);
+           D5 : in STD_LOGIC_VECTOR (3 downto 0);
+           D6 : in STD_LOGIC_VECTOR (3 downto 0);
+           D7 : in STD_LOGIC_VECTOR (3 downto 0);
+           Y : out STD_LOGIC_VECTOR (3 downto 0);
+           S : in STD_LOGIC_VECTOR ( 2 downto 0));
+end component;
+component Reg_Bank 
+ Port ( I : in STD_LOGIC_VECTOR (3 downto 0);
+           RegEn : in STD_LOGIC_VECTOR (2 downto 0);
+           Clk : in STD_LOGIC;
+           Reset : in STD_LOGIC;
+           Reg0 : out STD_LOGIC_VECTOR (3 downto 0);
+           Reg1 : out STD_LOGIC_VECTOR (3 downto 0);
+           Reg2 : out STD_LOGIC_VECTOR (3 downto 0);
+           Reg3 : out STD_LOGIC_VECTOR (3 downto 0);
+           Reg4 : out STD_LOGIC_VECTOR (3 downto 0);
+           Reg5 : out STD_LOGIC_VECTOR (3 downto 0);
+           Reg6 : out STD_LOGIC_VECTOR (3 downto 0);
+           Reg7 : out STD_LOGIC_VECTOR (3 downto 0));
+end component;
+ 
+component ROM 
+ Port ( address : in STD_LOGIC_VECTOR (2 downto 0);
+           instruction : out STD_LOGIC_VECTOR (11 downto 0)); 
+end component;
+SIGNAL Program_counter_D ,register_enable,Instruction_Address: STD_LOGIC_VECTOR ( 2 downto 0);
+SIGNAL Adder_3_bit_out,address_to_jump  ,reg_select_1,register_select_MUX_1,register_select_mux_2: STD_LOGIC_VECTOR (2 downto 0);
+SIGNAL Adder_3_bit_carry,jump_flag ,load_signal,add_or_subtract,disable_all_register,load_select,Clk_slow,Adder_4_bit_carry,Zero :STD_LOGIC;
+SIGNAL I : STD_LOGIC_VECTOR ( 11 downto 0);
+SIGNAL  DATA_BUS,Adder_4_bit_out,intermidiate_value : STD_LOGIC_VECTOR ( 3 downto 0);
+SIGNAL reg0,reg1,reg2,reg3,reg4,reg5,reg6,reg7, mux1_out,mux2_out,register_check_for_jump,register_bank_in : STD_LOGIC_VECTOR( 3 downto 0);
+SIGNAL instruction : STD_LOGIC_VECTOR ( 11 downto 0);
+
+
+begin
+
+Program_Counter_0 :Program_Counter port map(
+Res=>Reset,
+Clk =>Clk_slow,
+D_IN=>Program_counter_D,
+Q=>Instruction_Address);
+
+Adder_03_bit_0 : Adder_03_bit Port map(
+A=>Instruction_Address,
+B=>"001",
+S=>Adder_3_bit_out,
+cin=>'0',
+Cout=>Adder_3_bit_carry);
+
+Adder_4_bit_0 : Adder_4_bit Port map(
+A=>mux1_out,
+B=>mux2_out,
+Cin=>'0',
+Zero=>Zero,
+M=>add_or_subtract,
+S=>Adder_4_bit_out,
+Cout=>Adder_4_bit_carry);
+
+MUX_2_to_1_3_bit_0 : MUX_2_to_1_3_bit port map(
+D0=>Adder_3_bit_out,
+D1=>address_to_jump,
+S=>jump_flag,
+Y=>Program_counter_D);
+
+
+MUX_2_to_1_4_bit_0 : MUX_2_to_1_04_bit port map(
+D1=>Adder_4_bit_out,
+D0=>intermidiate_value,
+load_select=>load_select,
+Y=>register_bank_in);
+
+
+Mux_8_to_1_4_bit_0: Mux_8_to_1_4_bit port map(
+           D0=> reg0,
+           D1=> reg1 ,
+           D2 => reg2 ,
+           D3 =>reg3,
+           D4 => reg4,
+           D5 => reg5,
+           D6 =>reg6,
+           D7=>reg7,
+           Y =>mux1_out,
+           S =>register_select_mux_1);
+           
+Mux_8_to_1_4_bit_1: Mux_8_to_1_4_bit port map(
+ D0=> reg0,
+           D1=> reg1 ,
+           D2 => reg2 ,
+           D3 =>reg3,
+           D4 => reg4,
+           D5 => reg5,
+           D6 =>reg6,
+           D7=>reg7,
+           Y =>mux2_out,
+           S =>register_select_mux_2);
+ Instuction_Decoder_0 : Instruction_Decoder port map (
+ instruction=>instruction ,
+           load_select=>load_select ,
+           add_or_subtract=>add_or_subtract ,
+           intermidiate_value=>intermidiate_value ,
+           register_select_MUX_1=>register_select_MUX_1,
+           register_enable=>register_enable ,
+           register_select_mux_2=>register_select_mux_2 ,
+           disable_all_register=>disable_all_register ,
+           address_to_jump=>address_to_jump ,
+           jump_flag=>jump_flag ,
+           register_check_for_jump=>register_check_for_jump );
+ 
+ Register_Bank_0: Reg_Bank port map (
+ I =>register_bank_in ,
+           RegEn=>register_enable ,
+           Clk=> Clk_slow,
+           Reset=>reset ,
+           Reg0=>reg0 ,
+           Reg1 =>reg1,
+           Reg2=>reg2 ,
+           Reg3 =>reg3,
+           Reg4=>reg4 ,
+           Reg5=>reg5 ,
+           Reg6=>reg6 ,
+           Reg7=>reg7 );
+  Slow_Clk0 : Slow_Clk
+        PORT MAP( Clk_in => Clk,
+                  Clk_out => Clk_slow 
+        );
+  
+  ROM_0: ROM port map (
+  address=>Instruction_Address,
+  instruction=>instruction );
+  
+  
+      
+end Behavioral;
